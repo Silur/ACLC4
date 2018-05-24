@@ -1,5 +1,5 @@
-#ifndef LIBACLC4_H
-#define LIBACLC4_H
+#ifndef ACLC4_AC_H
+#define ACLC4_AC_H
 
 #ifndef LIBCLESS
 #include <stdio.h>
