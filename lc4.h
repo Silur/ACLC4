@@ -1,5 +1,6 @@
 #ifndef ACLC4_LC_H
 #define ACLC4_LC_H
+int LC4_set_key(unsigned char *key);
 unsigned char LC4_process_byte(unsigned char b, unsigned int d); // d=1 for decryption
 unsigned long LC4_encrypt_block(unsigned char *p, unsigned long plen, 
 				unsigned char *key,

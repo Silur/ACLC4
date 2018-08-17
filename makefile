@@ -1,15 +1,13 @@
 .POSIX:
 .SUFFIXES:
 CC=gcc
-CFLAGS=-g -fsanitize=address
-LDFLAGS=-lasan
+CFLAGS=-g -fsanitize=address -fPIC
+LDFLAGS=-lasan -shared
 
-all: test
+all: libaclc4.so
 
-test: ac.o lc4.o
-	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS) 
-#lib: main.o
-#	ar rcs libarithlc4.a main.o
+libaclc4.so: ac.o lc4.o
+	$(CC) -o $@ $(CFLAGS) $< $(LDFLAGS)
 
 ac.o: ac.c
 	$(CC) -c -o $@ $(CFLAGS) $<
@@ -17,11 +15,13 @@ ac.o: ac.c
 lc4.o: lc4.c
 	$(CC) -c -o $@ $(CFLAGS) $<
 
+test: libaclc4.so test.c
+	$(CC) -o $@ $(CFLAGS) test.c -laclc4 -lasan
+
 debug: CFLAGS += -DDEBUG
-debug: test
 
 nolibc: CFLAGS += -DLIBCLESS -nodefaultlibs
-nolibc: test
+nolibc: libaclc4
 
 clean:
-	rm *.o *.a
+	rm *.o *.so test

@@ -1,5 +1,7 @@
 #include "lc4.h"
 static unsigned char state_matrix[16][16];
+static unsigned int mx;
+static unsigned int my;
 static void
 safe_free(void *v, int n)
 {
@@ -8,7 +10,7 @@ safe_free(void *v, int n)
 }
 
 static int
-safecmp(const void * a, const void *b, const unsigned long size) 
+safecmp(const void *a, const void *b, const unsigned long size) 
 {
   const unsigned char *_a = (const unsigned char *) a;
   const unsigned char *_b = (const unsigned char *) b;
@@ -22,16 +24,27 @@ safecmp(const void * a, const void *b, const unsigned long size)
   return result == 0;
 }
 
+int
+LC4_set_key(unsigned char *key)
+{
+	int i, j;
+	for(i=0; i<16; i++)	
+		for(j=0; j<16; j++)
+			state_matrix[i][j] = key[i*16+j];
+	mx = 0;
+	my = 0;
+	return 1;
+				
+}
+
 unsigned char
 LC4_process_byte(unsigned char p, unsigned int d)
 {
     d = (d==0) ? 1 : -1;
     unsigned int j;
     unsigned int k;
-    unsigned int r, c;
-    unsigned int x, y;
-    static unsigned int mx = 0;
-    static unsigned int my = 0;
+    unsigned int r = 0, c=0;
+    unsigned int x=0, y=0;
     for(j=0; j<16; j++)
         for(k=0; k<16; k++)
             if(state_matrix[j][k] == p)
@@ -43,7 +56,7 @@ LC4_process_byte(unsigned char p, unsigned int d)
     y = (c+d*(state_matrix[mx][my]&15)) & 15;
     unsigned char C = state_matrix[x][y];
     
-    if(d)
+    if(d == 1)
     {
         for(j=0; j<16; j++)
             state_matrix[r][j] = state_matrix[r][(unsigned int)(j+1)&15];
@@ -53,9 +66,10 @@ LC4_process_byte(unsigned char p, unsigned int d)
 
         for(j=0; j<16; j++)
             state_matrix[j][y] = state_matrix[(unsigned int)(j+1)&15][y];
-        // x = (x+1)&255;
-        if(safecmp(&c, &y, sizeof(unsigned int))) r = (unsigned int)(r+1)&255;
+        if(safecmp(&c, &y, sizeof(unsigned int))) r = (unsigned int)((r+1)&255);
         if(safecmp(&my, &y, sizeof(unsigned int))) mx = (unsigned int)(mx+1)&255;
+		mx = (mx+(C/16))&15;
+		my = (my+(C&15))&15;
     }
     else
     {
@@ -67,11 +81,14 @@ LC4_process_byte(unsigned char p, unsigned int d)
 
         for(j=0; j<16; j++)
             state_matrix[j][c] = state_matrix[(unsigned int)(j+1)&15][c];
-        // r = (x+1)&255;
         if(safecmp(&c, &y, sizeof(unsigned int))) r = (unsigned int)(r+1)&255;
         if(safecmp(&my, &y, sizeof(unsigned int))) mx = (unsigned int)(mx+1)&255;
+		mx = (mx+(p/16))&15;
+		my = (my+(p&15))&15;
 
     }
+	//i = (i+(C/6)) mod 6
+	return C;
 }
 
 unsigned long
@@ -106,10 +123,8 @@ unsigned long LC4_decrypt_block(unsigned char *c, unsigned long clen,
 	if(!p) return 0;
     unsigned int i;
     unsigned int j;
-    for(i=0; i<16; i++)
-        for(j=0; j<16; j++)
-            state_matrix[i][j] = key[i*16+j];
-
+	
+	LC4_set_key(key);
     safe_free(key, 256);
 
 	for(i=0; i<nlen; i++)
